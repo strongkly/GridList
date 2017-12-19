@@ -212,15 +212,9 @@ public class MultiList : MonoBehaviour {
         this.scrollRect.onValueChanged.AddListener(OnDrag);
         //创建列表时，由于可能内容位置不是0,0，因此绘制位置需要调整
         grid.SetStartPlacePos(contentStartPos);
-        for (startIndex = 0, endIndex = -1; endIndex + 1 < datas.Count;) {
-            //if (!hasGroups || !currentGroup.TryAddUnit(GetNextDataTemplateObjRec(), endIndex + 1)) {
-                if (!TryAddGroup())
-                    return;
-            //}
-            //else {
-                //endIndex++;
-            //}
-        }
+        for (startIndex = 0, endIndex = -1; endIndex + 1 < datas.Count;)
+            if (!TryAddGroup())
+                return;
     }
 
     protected virtual void OnDrag(Vector2 delta) {
@@ -228,7 +222,7 @@ public class MultiList : MonoBehaviour {
         dragDisDelta.y = content.rect.height * delta.y;
 
         TryDeleteAllValidInvisibleItem(dragDisDelta);
-        //TryAddAllValidItem(dragDisDelta);
+        TryAddAllValidItem(dragDisDelta);
         UpdateAllGroupLastDragDis(dragDisDelta);
         TryAddGroupWhenDrag(dragDisDelta);
     }
@@ -304,12 +298,12 @@ public class MultiList : MonoBehaviour {
             offset = groups[i].TryDeleteWhenDrag(deltaDis);
             if (offset == 0)
                 continue;
-            else {//成功删除当前unit
+            else {//delete current unit successfully
                 if (offset > 0)
                     startIndex += offset;
                 else
                     endIndex += offset;
-                //如果当前group 已经没有unit，删除当前group
+                //delete current group if contains no units
                 if (!groups[i].hasUnits) {
                     groups.Remove(groups[i]);
                     //Debug.LogError(string.Format("group[{0}] is now deleting...current group count:{1}", i, groups.Count));
@@ -335,12 +329,14 @@ public class MultiList : MonoBehaviour {
 
     bool IsNewGroupVisible(bool isAddFromEnd = true) {
         if (!hasGroups) return true;
-        if (isHorizontalFirst) {//不能使用currentGroup 因为前后都有可能增加，而currentGroup 只能记录上一次的group 会导致错误
+        //do not use currentGroup, cause item can be both add from head or end，
+        //however currentGroup only record last group, this may leads to fault
+        if (isHorizontalFirst) {
             if (isAddFromEnd)
                 return currentGroup.startPos.y - currentGroup.curBioDirMax - padding.y >
                     contentStartPos.y - bound.height;
             else
-                return currentGroup.startPos.y + padding.y < contentStartPos.y;
+                return firstGroup.startPos.y + padding.y < contentStartPos.y;
         }
         else {
             if (isAddFromEnd)
@@ -402,11 +398,11 @@ public class MultiList : MonoBehaviour {
         if (isAddFromEnd)
             groups.Add(newGroup);
         else {
-            //添加至顶部时，需要重新设置grid绘制的起始位置
+            //when append group to the head of grid, reset the start draw position of grid
             grid.SetStartPlacePos(newGroup.startPos);
             groups.Insert(0, newGroup);
         }
-        //增加一个组后，立即重排该组
+        //when append a group,reset all sibling's position immediately
         grid.RepositionChildsWithStartPos(newGroup.startPos, newGroup.startSibIndex, 
             newGroup.startSibIndex + newGroup.unitCount - 1);
     }
@@ -416,8 +412,8 @@ public class MultiList : MonoBehaviour {
             return -content.localPosition;
         else {
             if (isAddFromHead) {
-                //在头部新增组时，由于第二方向上最大长度未知，因此仅保证第一轴向位置，重新绘制之前，还需要修正第二轴向
-                //在头部新增组时，需要反向计算该组最大能容纳往前多少个数据，从而计算出startPos
+                //when try to add group to head, by calculate how many datas the new group can
+                //contain, we get the startPos 
                 return GetRealNewGroupStartPosWhenAddToHead();
             }
             else {
@@ -463,16 +459,29 @@ public class MultiList : MonoBehaviour {
         int result = full;
         if (full <= 0) return result;
         Rect rect = GetTemplateRectByDataIndex(startIndex - 1);
-        float lastRectLen = isHorizontalFirst ? rect.width : rect.height;
+        float lastRectDisplayLen = isHorizontalFirst ? rect.width : rect.height;
+        lastRectDisplayLen = lastRectDisplayLen - (GetMaxFullyContainLen(full) - 
+            (isHorizontalFirst ? bound.width : bound.height));
         while (true) {
             if (result - 1 < 0)
                 return result;
             rect = GetTemplateRectByDataIndex(result - 1);
-            lastRectLen -= isHorizontalFirst ? rect.width : rect.height;
-            if (lastRectLen <= 0)
-                return result - 1;
+            lastRectDisplayLen -= isHorizontalFirst ? rect.width : rect.height;
+            if (lastRectDisplayLen <= 0)
+                return result;
             result--;
         }
+    }
+
+    float GetMaxFullyContainLen(int fullContainStartIndex = 0) {
+        float result = 0;
+        for (int i = fullContainStartIndex; i < startIndex; i++) {
+            result += isHorizontalFirst ? GetTemplateRectByDataIndex(i).width :
+                GetTemplateRectByDataIndex(i).height;
+            if (i != startIndex - 1)
+                result += isHorizontalFirst ? padding.x : padding.y;
+        }
+        return result;
     }
 
     int GetMaxFullyContainStartIndex() {
@@ -486,6 +495,7 @@ public class MultiList : MonoBehaviour {
             viewPortLen = isHorizontalFirst ? viewPortLen - rect.width : viewPortLen - rect.height;
             if (viewPortLen <= 0)
                 return result - 1;
+            viewPortLen -= isHorizontalFirst ? padding.x : padding.y;
             result--;
         }
     }
@@ -542,7 +552,7 @@ public class MultiUnitGroup{
 
     MultiList multiList;
 
-    #region 方便接口
+    #region interfaces for convenience
     Rect bound {
         get {
             return multiList.bound;
@@ -604,6 +614,7 @@ public class MultiUnitGroup{
         get;
     }
 
+    //the position of first unit in group drawing on screen 
     Vector3 startPosition;
     public Vector2 lastDragDis = Vector2.zero;
     public Vector3 startPos {
@@ -627,11 +638,11 @@ public class MultiUnitGroup{
     public int TryAppendWhenDrag(Vector2 dragDis) {
         int isAppendSuccess = 0;
         if (IsLeftDrag(dragDis) || IsTopDrag(dragDis)) {
-            //可能需要在后部增加unit，显示后续记录;
+            //may need append unit to end, display next datas
             isAppendSuccess = TryAppendUnit() ? 1 : 0;
         }
         else {
-            //可能需要在前部增加unit, 显示前续记录;
+            //may need append unit to head, display previous datas
             isAppendSuccess = TryAppendUnit(false) ? -1 : 0;
         }
         //lastDragDis.Set(dragDis.x, dragDis.y);
@@ -640,7 +651,8 @@ public class MultiUnitGroup{
 
     public int TryDeleteWhenDrag(Vector2 dragDis) {
         int isDeleteSuccess = 0;
-        //删除数据时，必须严格从数据两头（startIndex, endIndex）开始删除
+        //when deleteing unit, strict to the principle that deleting 
+        //only starts at both side of datas
         if (IsLeftDrag(dragDis) || IsTopDrag(dragDis)) {
             if (units[0].dataIndex == multiList.startIndex)
                 isDeleteSuccess = TryRemoveUnit() ? 1 : 0;
@@ -716,7 +728,8 @@ public class MultiUnitGroup{
 
     /// 判断新增Unit 是否可见
     bool IsNewUnitVisible(bool isAddFromEnd = true) {
-        if (!hasUnits) return true; //第一个Item 均视为可见
+        //first item set to visible
+        if (!hasUnits) return true;
         //TODO: 改进或废除 firstUnitPos 等接口。由于组内增加和删除Unit 时不会立即更新绘制位置，所以不能简单使用firstUnitPos 等接口
         if (isHorizontalFirst) {
             if (isAddFromEnd) {
