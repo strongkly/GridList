@@ -63,6 +63,9 @@ public class MultiUnitGroup {
     }
     #endregion
 
+    static int groupIdCur = 0;
+    public int groupid;
+
     public float curBioDirMax {
         private set;
         get;
@@ -83,6 +86,8 @@ public class MultiUnitGroup {
     public MultiUnitGroup(MultiList multiList, int startSibIndex, bool isAddFromEnd = true) {
         this.multiList = multiList;
         this.startSibIndex = startSibIndex;
+        groupIdCur++;
+        groupid = groupIdCur;
     }
 
     public void SetNewGroupStartPos(Vector3 startPos) {
@@ -268,6 +273,8 @@ public class MultiUnitGroup {
             trans.SetSiblingIndex(startSibIndex);
         trans.localScale = Vector3.one;
         obj.SetActive(true);
+
+        obj.name = string.Format("groupid:{0}siblingindex:{1}start:{2}end:{3}",groupid, "000", startSibIndex, startSibIndex + units.Count);
     }
 
     void DestroyUnit(GameObject obj) {

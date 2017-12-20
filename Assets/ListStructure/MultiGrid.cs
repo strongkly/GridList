@@ -9,10 +9,10 @@ using UnityEngine.UI;
 /// </summary>
 public class MultiGrid : MonoBehaviour 
 {
-    //是否优先横向排列
+    //is sibling item arrange to horizontal first
     public bool isHorizontalFirst = true;
     [SerializeField]
-    protected Vector2 padding = Vector2.zero;//for hierachy,do not use,use Padding instead
+    protected Vector2 padding = Vector2.zero;//for Inspector,do not use,use Padding instead
     public Vector2 Padding {
         get {
             return padding;
@@ -32,7 +32,7 @@ public class MultiGrid : MonoBehaviour
     Vector2 startPlacePos = Vector2.zero, nowPlacePos = Vector2.zero;
     float curBioDirMax;
 
-    #region 方便接口
+    #region convenience interfaces
     public Vector3 ContentPos {
         get {
             return -transform.localPosition;
@@ -44,7 +44,7 @@ public class MultiGrid : MonoBehaviour
         OnStart();
     }
 
-    #region 初始化逻辑
+    #region initial logic
     void OnStart() {
         InitFields();
         RepositionAllChildPanel();
@@ -55,15 +55,10 @@ public class MultiGrid : MonoBehaviour
     }
     #endregion
 
-    #region 重置逻辑
-    /// <summary>
-    /// 仅当显示(即activeInHierachy = true)时调用有效
-    /// 子项目隐藏时不会被更新位置
-    /// </summary>
+    #region logic of reset position
     public void RepositionAllChildPanel() 
     {
         nowPlacePos = GetRepositionStartPos();
-        //由于每个子项目的大小可能不同，每放置一个项目，均需判断当前第二方向在另起一行（列）时的起始位置
         for (int i = 0; i < transform.childCount; i++) 
             RepositionChildPanel(i, true);
     }
@@ -87,7 +82,6 @@ public class MultiGrid : MonoBehaviour
     }
 
     void ManageNowPos(RectTransform curChild, bool autoChangeLine = false) {
-        //检查优先排列的方向，放置当前子项目后是否会超过边缘，超过边缘则开始在第二方向上摆放
         if (autoChangeLine && IsOutOfFirstDirectionBound(curChild))
             StartNewGroup();
         else
