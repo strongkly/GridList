@@ -56,7 +56,7 @@ public class MultiUnitGroup {
             return units.Count;
         }
     }
-
+   
     public int startSibIndex {
         private set;
         get;
@@ -87,6 +87,10 @@ public class MultiUnitGroup {
 
     public void SetNewGroupStartPos(Vector3 startPos) {
         this.startPos = startPos;
+    }
+
+    public void SetStartSiblingIndex(int index) {
+        this.startSibIndex = index;
     }
 
     public int TryAppendWhenDrag(Vector2 dragDis) {
@@ -303,5 +307,10 @@ public class MultiUnitGroup {
 
     public void SetLastDragDis(Vector2 lastDragDis) {
         this.lastDragDis.Set(lastDragDis.x, lastDragDis.y);
+    }
+
+    public void RepositionAllUnit() {
+        multiList.grid.RepositionChildsWithStartPos(startPos, startSibIndex,
+           startSibIndex + unitCount - 1);
     }
 }

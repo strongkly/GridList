@@ -165,7 +165,8 @@ public class MultiList : MonoBehaviour {
         this.datas = datas;
         this.itemViewType = itemViewType;
         this.scrollRect.onValueChanged.AddListener(OnDrag);
-        //创建列表时，由于可能内容位置不是0,0，因此绘制位置需要调整
+        //set the start pos of grid to the start pos of content at beginning,
+        //in order to get whole view of initial list
         grid.SetStartPlacePos(contentStartPos);
         for (startIndex = 0, endIndex = -1; endIndex + 1 < datas.Count;)
             if (!TryAddGroup())
@@ -222,7 +223,6 @@ public class MultiList : MonoBehaviour {
     void TryAddAllValidItem(Vector2 deltaDis) {
         while (true) {
             if (!TryAddItemToBoundary(deltaDis)) return;
-            grid.RepositionAllChildPanel();
         }
     }
 
@@ -236,6 +236,8 @@ public class MultiList : MonoBehaviour {
                     endIndex += offset;
                 else
                     startIndex += offset;
+                ResetGroupStartSiblingIndex(i, offset);
+                groups[i].RepositionAllUnit();
                 return true;
             }
         }
@@ -258,7 +260,8 @@ public class MultiList : MonoBehaviour {
                     startIndex += offset;
                 else
                     endIndex += offset;
-                //delete current group if contains no units
+                ResetGroupStartSiblingIndex(i, offset, false);
+                //delete current group if it contains no units
                 if (!groups[i].hasUnits) {
                     groups.Remove(groups[i]);
                     //Debug.LogError(string.Format("group[{0}] is now deleting...current group count:{1}", i, groups.Count));
@@ -267,6 +270,17 @@ public class MultiList : MonoBehaviour {
             }
         }
         return false;
+    }
+
+    void ResetGroupStartSiblingIndex(int groupIndex, int offset, bool isAdd = true) {
+        if (offset == 0) return;
+        offset = Math.Abs(offset);
+        for (int i = groupIndex + 1; i < groups.Count; i++) {
+            if (isAdd)
+                groups[i].SetStartSiblingIndex(groups[i].startSibIndex + offset);
+            else
+                groups[i].SetStartSiblingIndex(groups[i].startSibIndex - offset);
+        }
     }
 
     bool TryAddGroup(bool isAddFormEnd = true){
@@ -284,8 +298,8 @@ public class MultiList : MonoBehaviour {
 
     bool IsNewGroupVisible(bool isAddFromEnd = true) {
         if (!hasGroups) return true;
-        //do not use currentGroup, cause item can be both add from head or end，
-        //however currentGroup only record last group, this may leads to fault
+        //do not use currentGroup, cause item can be both added from head or end of data,
+        //however currentGroup only record last group, this may leads to error
         if (isHorizontalFirst) {
             if (isAddFromEnd)
                 return currentGroup.startPos.y - currentGroup.curBioDirMax - padding.y >
@@ -357,7 +371,7 @@ public class MultiList : MonoBehaviour {
             grid.SetStartPlacePos(newGroup.startPos);
             groups.Insert(0, newGroup);
         }
-        //when append a group,reset all sibling's position immediately
+        //when append a group,reset the position of all siblings in new group immediately
         grid.RepositionChildsWithStartPos(newGroup.startPos, newGroup.startSibIndex, 
             newGroup.startSibIndex + newGroup.unitCount - 1);
     }

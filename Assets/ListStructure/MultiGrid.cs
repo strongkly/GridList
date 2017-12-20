@@ -91,7 +91,6 @@ public class MultiGrid : MonoBehaviour
     }
 
     public void RepositionChildsWithStartPos(Vector2 starPos, int startSib, int endSib) {
-        //Debug.LogError(string.Format("startSib:{0},endSib:{1}", startSib, endSib));
         nowPlacePos = starPos;
         for (int i = startSib; i <= endSib; i++)
             RepositionChildPanel(i);
