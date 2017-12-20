@@ -65,10 +65,10 @@ public class MultiGrid : MonoBehaviour
         nowPlacePos = GetRepositionStartPos();
         //由于每个子项目的大小可能不同，每放置一个项目，均需判断当前第二方向在另起一行（列）时的起始位置
         for (int i = 0; i < transform.childCount; i++) 
-            RepositionChildPanel(i);
+            RepositionChildPanel(i, true);
     }
 
-    public void RepositionChildPanel(int idx) {
+    public void RepositionChildPanel(int idx, bool autoChangeLine = false) {
         RectTransform curChild = null;
         curChild = transform.GetChild(idx) as RectTransform;
         if (!curChild.gameObject.activeInHierarchy) return;
@@ -83,8 +83,12 @@ public class MultiGrid : MonoBehaviour
         }
         ApplyPaddingToNowPos();
 
+        ManageNowPos(curChild, autoChangeLine);
+    }
+
+    void ManageNowPos(RectTransform curChild, bool autoChangeLine = false) {
         //检查优先排列的方向，放置当前子项目后是否会超过边缘，超过边缘则开始在第二方向上摆放
-        if (IsOutOfFirstDirectionBound(curChild))
+        if (autoChangeLine && IsOutOfFirstDirectionBound(curChild))
             StartNewGroup();
         else
             SetNowPosAfterPlaceCurChild(curChild);

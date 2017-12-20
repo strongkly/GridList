@@ -131,16 +131,15 @@ public class MultiUnitGroup {
     }
 
     bool TryAppendUnit(bool isAddFromEnd = true) {
-        GameObject obj = isAddFromEnd ? multiList.GetNextDataTemplateObjRec() :
-            multiList.GetPreDataTemplateObjRec();
+        GameObject obj = isAddFromEnd ? 
+            multiList.GetNextDataTemplate() : multiList.GetPreDataTemplate();
         if (obj == null) return false;
         RectTransform trans = obj.transform as RectTransform;
-        ///追加unit 时，需要判断当前该组是否可以容纳当前的unit
-        if (IsNewTransBioBiggerThanMax(trans)) {
-            FailAddNewUnit(obj);
+        ///check if current group is able to append the unit
+        if (IsNewTransBioBiggerThanMax(trans))
             return false;
-        }
-        return TryAddUnit(obj, isAddFromEnd ? multiList.endIndex + 1 :
+        
+        return TryAddUnit(isAddFromEnd ? multiList.endIndex + 1 :
             multiList.startIndex - 1, isAddFromEnd);
     }
 
@@ -148,27 +147,16 @@ public class MultiUnitGroup {
         MultiUnit unit = isDeleteFromHead ? units[0] : units[units.Count - 1];
         if (IsUnitVisible(unit))
             return false;
-        DestroyAndRemoveUnit(unit);
+        DestroyAndRemoveUnit(unit, isDeleteFromHead);
         return true;
     }
 
-    public bool TryAddUnit(GameObject obj, int dataIndex, bool isAddFromEnd = true) {
-        if (!IsNewUnitVisible(isAddFromEnd)) {
-            FailAddNewUnit(obj);
+    public bool TryAddUnit(int dataIndex, bool isAddFromEnd = true) {
+        if (!IsNewUnitVisible(isAddFromEnd))
             return false;
-        }
-        FillItemView(CreateAndAddUnit(obj, isAddFromEnd), dataIndex);
+        FillItemView(CreateAndAddUnit(multiList.CreateListItemByDataIndex(dataIndex),
+            isAddFromEnd), dataIndex);
         return true;
-    }
-
-    /// <summary>
-    /// 由于不能预知组的第二方向最大显示长度，需要在增加完毕后，修正绘制的起始位置
-    /// </summary>
-    public void FixStartPosWithCurrentBioMax() {
-        if (isHorizontalFirst)
-            startPosition.y += curBioDirMax;
-        else
-            startPosition.x -= curBioDirMax;
     }
 
     bool IsUnitVisible(MultiUnit unit) {
@@ -184,7 +172,7 @@ public class MultiUnitGroup {
             return true;
     }
 
-    /// 判断新增Unit 是否可见
+    /// determine if newly added unit is visiable 
     bool IsNewUnitVisible(bool isAddFromEnd = true) {
         //first item set to visible
         if (!hasUnits) return true;
@@ -224,10 +212,6 @@ public class MultiUnitGroup {
         return result;
     }
 
-    void FailAddNewUnit(GameObject obj) {
-        multiList.RemoveTemplateObject(obj);
-    }
-
     bool IsNewTransBioBiggerThanMax(RectTransform trans) {
         if (isHorizontalFirst)
             return trans.rect.height > curBioDirMax;
@@ -255,6 +239,7 @@ public class MultiUnitGroup {
             startPosition.x = startPosition.x - padding.x - unit.width;
         else
             startPosition.y = startPosition.y + padding.y + unit.height;
+        //Debug.LogError(string.Format("add unitname:{0} ::: startPos:{1}", unit.gameObject.name, startPos));
     }
 
     void DestroyAndRemoveUnit(MultiUnit unit, bool isRemoveFromHead = true) {
@@ -271,6 +256,7 @@ public class MultiUnitGroup {
             startPosition.x = startPosition.x + unit.width + padding.x;
         else
             startPosition.y = startPosition.y - unit.height - padding.y;
+        //Debug.LogError(string.Format("rem unitname:{0} ::: startPos:{1}", unit.gameObject.name, startPos));
     }
 
     void CreateUnit(GameObject obj, bool isAddFromEnd = true) {
@@ -285,7 +271,7 @@ public class MultiUnitGroup {
     }
 
     void DestroyUnit(GameObject obj) {
-        multiList.RemoveTemplateObject(obj);
+        multiList.RemoveListItem(obj);
     }
 
     void FillItemView(MultiUnit unit, int dataIndex) {

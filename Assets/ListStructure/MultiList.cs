@@ -151,16 +151,6 @@ public class MultiList : MonoBehaviour {
     }
     #endregion
 
-    #region interfaces for convenience
-    public Rect GetTemplateRectByDataIndex(int dataIndex) {
-        return (GetTemplateObjectByChoiceIdx((datas[dataIndex] as IMultipleChoice).GetChoice())
-                .transform as RectTransform).rect;
-    }
-    public GameObject GetTemplateObjectByChoiceIdx(int choice) {
-        return templatesObjects[choice];
-    }
-    #endregion
-
     protected void CreateMultiList(IList datas, Type itemViewType) {
         this.datas = datas;
         this.itemViewType = itemViewType;
@@ -180,7 +170,7 @@ public class MultiList : MonoBehaviour {
         TryDeleteAllValidInvisibleItem(dragDisDelta);
         TryAddAllValidItem(dragDisDelta);
         UpdateAllGroupLastDragDis(dragDisDelta);
-        TryAddGroupWhenDrag(dragDisDelta);
+        //TryAddGroupWhenDrag(dragDisDelta);
     }
 
     void TryAddGroupWhenDrag(Vector2 dragDisDelta) {
@@ -231,7 +221,7 @@ public class MultiList : MonoBehaviour {
             offset = groups[i].TryAppendWhenDrag(deltaDis);
             if (offset == 0)
                 continue;
-            else {//尝试添加当前数据成功
+            else {
                 if (offset > 0)
                     endIndex += offset;
                 else
@@ -298,7 +288,7 @@ public class MultiList : MonoBehaviour {
 
     bool IsNewGroupVisible(bool isAddFromEnd = true) {
         if (!hasGroups) return true;
-        //do not use currentGroup, cause item can be both added from head or end of data,
+        //do not use currentGroup, cause item can be both added from head or end of datas,
         //however currentGroup only record last group, this may leads to error
         if (isHorizontalFirst) {
             if (isAddFromEnd)
@@ -311,9 +301,8 @@ public class MultiList : MonoBehaviour {
             if (isAddFromEnd)
                 return currentGroup.startPos.x + currentGroup.curBioDirMax + padding.x <
                     contentStartPos.x + bound.width;
-            else {
+            else 
                 return firstGroup.startPos.x - padding.x > contentStartPos.x;
-            }
         }
     }
 
@@ -328,7 +317,7 @@ public class MultiList : MonoBehaviour {
     void AddNewGroupToEnd(MultiUnitGroup newGroup) {
         int i = endIndex + 1;
         while (true) {
-            if (newGroup.TryAddUnit(GetIndexDataTemplateObjRec(i), i, true)) {
+            if (newGroup.TryAddUnit(i, true)) {
                 endIndex++;
                 if (IsShowDataReachEnd())
                     break;
@@ -342,7 +331,7 @@ public class MultiList : MonoBehaviour {
     void AddNewGroupToHead(MultiUnitGroup newGroup) {
         int i = startIndex - 1;
         while (true) {
-            if (newGroup.TryAddUnit(GetIndexDataTemplateObjRec(i), i, false)) {
+            if (newGroup.TryAddUnit(i, false)) {
                 startIndex--;
                 if (IsShowDataReachTop())
                     break;
@@ -396,6 +385,7 @@ public class MultiList : MonoBehaviour {
         }
     }
 
+    #region steps for get start pos when add new group to head
     Vector3 GetRealNewGroupStartPosWhenAddToHead() {
         int realstart = GetRealNewGroupStarIndexWhenAddToHead();
         float maxBio = 0;
@@ -468,6 +458,7 @@ public class MultiList : MonoBehaviour {
             result--;
         }
     }
+    #endregion
 
     MultiUnitGroup GetLeftTopMostUnitGroup() {
         if (!hasGroups) return null;
@@ -490,28 +481,43 @@ public class MultiList : MonoBehaviour {
         return result;
     }
 
-    public virtual GameObject GetNextDataTemplateObjRec(){
-        return GetIndexDataTemplateObjRec(endIndex + 1);
+    #region interfaces for convenience
+    public Rect GetTemplateRectByDataIndex(int dataIndex) {
+        return (GetTemplateObjByDataIndex(dataIndex).transform as RectTransform).rect;
     }
 
-    public virtual GameObject GetPreDataTemplateObjRec(){
-        return GetIndexDataTemplateObjRec(startIndex - 1);
+    public virtual GameObject GetNextDataTemplate() {
+        return GetTemplateObjByDataIndex(endIndex + 1);
     }
 
-    public virtual GameObject GetIndexDataTemplateObjRec(int index){
+    public virtual GameObject GetPreDataTemplate() {
+        return GetTemplateObjByDataIndex(startIndex - 1);
+    }
+
+    public GameObject GetTemplateObjByDataIndex(int dataIndex) {
+        if (dataIndex >= datas.Count || dataIndex < 0) return null;
+        return GetTemplateObjectByChoiceIdx((datas[dataIndex] as IMultipleChoice).GetChoice());
+    }
+
+    public GameObject GetTemplateObjectByChoiceIdx(int choice) {
+        return templatesObjects[choice];
+    }
+
+    public virtual GameObject CreateListItemByDataIndex(int index) {
         GameObject result = null;
         if (index < datas.Count && index >= 0) {
-            result = GetListItemObjectByChoiceIdx((datas[index] as IMultipleChoice).GetChoice());
+            result = InstantiateListItemObjectByChoiceIdx((datas[index] as IMultipleChoice).GetChoice());
             result.gameObject.AddComponent(itemViewType);
         }
         return result;
     }
 
-    public virtual GameObject GetListItemObjectByChoiceIdx(int idx = 0) {
+    public virtual GameObject InstantiateListItemObjectByChoiceIdx(int idx = 0) {
         return Instantiate(templatesObjects[idx]);
     }
 
-    public virtual void RemoveTemplateObject(GameObject tempObj) {
+    public virtual void RemoveListItem(GameObject tempObj) {
         GameObject.Destroy(tempObj);
     }
+    #endregion
 }
