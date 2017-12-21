@@ -170,7 +170,13 @@ public class MultiList : MonoBehaviour {
         TryDeleteAllValidInvisibleItem(dragDisDelta);
         TryAddAllValidItem(dragDisDelta);
         UpdateAllGroupLastDragDis(dragDisDelta);
-        //TryAddGroupWhenDrag(dragDisDelta);
+        TryAddGroupWhenDrag(dragDisDelta);
+        RepositionAllGroups();
+    }
+
+    void RepositionAllGroups() {
+        for (int i = 0; i < groups.Count; i++) 
+            groups[i].RepositionAllUnit();
     }
 
     void TryAddGroupWhenDrag(Vector2 dragDisDelta) {
@@ -222,12 +228,12 @@ public class MultiList : MonoBehaviour {
             if (offset == 0)
                 continue;
             else {
-                if (offset > 0)
+                if (offset > 0)//add to end
                     endIndex += offset;
                 else
-                    startIndex += offset;
+                    startIndex += offset;//add to head
                 ResetGroupStartSiblingIndex(i, offset);
-                groups[i].RepositionAllUnit();
+                groups[i].SetGroupNeedReposition();
                 return true;
             }
         }
@@ -265,12 +271,11 @@ public class MultiList : MonoBehaviour {
     void ResetGroupStartSiblingIndex(int groupIndex, int offset, bool isAdd = true) {
         if (offset == 0) return;
         offset = Math.Abs(offset);
-        for (int i = groupIndex + 1; i < groups.Count; i++) {
+        for (int i = groupIndex + 1; i < groups.Count; i++)
             if (isAdd)
                 groups[i].SetStartSiblingIndex(groups[i].startSibIndex + offset);
             else
                 groups[i].SetStartSiblingIndex(groups[i].startSibIndex - offset);
-        }
     }
 
     bool TryAddGroup(bool isAddFormEnd = true){
@@ -361,8 +366,9 @@ public class MultiList : MonoBehaviour {
             groups.Insert(0, newGroup);
         }
         //when append a group,reset the position of all siblings in new group immediately
-        grid.RepositionChildsWithStartPos(newGroup.startPos, newGroup.startSibIndex, 
-            newGroup.startSibIndex + newGroup.unitCount - 1);
+        newGroup.SetGroupNeedReposition();
+        //grid.RepositionChildsWithStartPos(newGroup.startPos, newGroup.startSibIndex, 
+        //    newGroup.startSibIndex + newGroup.unitCount - 1);
     }
 
     Vector3 GetNewStartPosWhenAddGroup(MultiUnitGroup newGroup, bool isAddFromHead = false) {

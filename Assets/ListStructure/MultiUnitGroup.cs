@@ -63,6 +63,13 @@ public class MultiUnitGroup {
     }
     #endregion
 
+    #region for optimistic
+    public bool needReposition {
+        private set;
+        get;
+    }
+    #endregion
+
     static int groupIdCur = 0;
     public int groupid;
 
@@ -96,35 +103,36 @@ public class MultiUnitGroup {
 
     public void SetStartSiblingIndex(int index) {
         this.startSibIndex = index;
+        //Debug.LogError(string.Format("group{0}'s sibling index set to {1}", groupid, index));
     }
 
     public int TryAppendWhenDrag(Vector2 dragDis) {
-        int isAppendSuccess = 0;
+        int offset = 0;
         if (IsLeftDrag(dragDis) || IsTopDrag(dragDis)) {
             //may need append unit to end, display next datas
-            isAppendSuccess = TryAppendUnit() ? 1 : 0;
+            offset = TryAppendUnit() ? 1 : 0;
         }
         else {
             //may need append unit to head, display previous datas
-            isAppendSuccess = TryAppendUnit(false) ? -1 : 0;
+            offset = TryAppendUnit(false) ? -1 : 0;
         }
         //lastDragDis.Set(dragDis.x, dragDis.y);
-        return isAppendSuccess;
+        return offset;
     }
 
     public int TryDeleteWhenDrag(Vector2 dragDis) {
-        int isDeleteSuccess = 0;
-        //when deleteing unit, strict to the principle that deleting 
-        //only starts at both side of datas
+        int offset = 0;
+        //when deleting unit, strict to the principle that deleting 
+        //only starts from either side of datas
         if (IsLeftDrag(dragDis) || IsTopDrag(dragDis)) {
             if (units[0].dataIndex == multiList.startIndex)
-                isDeleteSuccess = TryRemoveUnit() ? 1 : 0;
+                offset = TryRemoveUnit() ? 1 : 0;
         }
         else {
             if (units[units.Count - 1].dataIndex == multiList.endIndex)
-                isDeleteSuccess = TryRemoveUnit(false) ? -1 : 0;
+                offset = TryRemoveUnit(false) ? -1 : 0;
         }
-        return isDeleteSuccess;
+        return offset;
     }
 
     bool IsLeftDrag(Vector2 dragDis) {
@@ -302,8 +310,16 @@ public class MultiUnitGroup {
         this.lastDragDis.Set(lastDragDis.x, lastDragDis.y);
     }
 
+    public void SetGroupNeedReposition() {
+        this.needReposition = true;
+    }
+
     public void RepositionAllUnit() {
-        multiList.grid.RepositionChildsWithStartPos(startPos, startSibIndex,
-           startSibIndex + unitCount - 1);
+        if (needReposition)
+            multiList.grid.RepositionChildsWithStartPos(startPos, startSibIndex,
+               startSibIndex + unitCount - 1);
+
+        needReposition = false;
+        //Debug.LogError(string.Format("groupid:{0},startSibIndex:{1},endSibIndex:{2}", groupid, startSibIndex, startSibIndex + unitCount - 1));
     }
 }

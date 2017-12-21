@@ -14,6 +14,7 @@ public class TestListItem : ViewBase {
     public override void FillView(object data) {
         this.data = data as TestDatas;
         text.text = string.Format("s:{0}  i:{1}", this.data.choice, this.data.dataIndex);
+        gameObject.name = string.Format("{0}dataIdx:{1}", gameObject.name, this.data.dataIndex);
     }
 }
 
