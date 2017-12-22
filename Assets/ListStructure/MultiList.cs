@@ -26,6 +26,8 @@ public class MultiList : MonoBehaviour {
     #region inspector fields
     [SerializeField]
     protected List<GameObject> templatesObjects;
+    [SerializeField]
+    protected int objectPoolSize = 7;
     #endregion
 
     #region data related fields
@@ -103,6 +105,10 @@ public class MultiList : MonoBehaviour {
     Vector2 lastDragDis;
 
     Type itemViewType;
+    public MultipleObjectPoolAdapter<GameObject> poolAdapter {
+        private set;
+        get;
+    }
     #endregion
 
     public void Start() {
@@ -155,6 +161,7 @@ public class MultiList : MonoBehaviour {
         this.datas = datas;
         this.itemViewType = itemViewType;
         this.scrollRect.onValueChanged.AddListener(OnDrag);
+        InitPoolAdapter();
         //set the start pos of grid to the start pos of content at beginning,
         //in order to get whole view of initial list
         grid.SetStartPlacePos(contentStartPos);
@@ -175,7 +182,7 @@ public class MultiList : MonoBehaviour {
     }
 
     void RepositionAllGroups() {
-        for (int i = 0; i < groups.Count; i++) 
+        for (int i = 0; i < groups.Count; i++)
             groups[i].RepositionAllUnit();
     }
 
@@ -278,7 +285,7 @@ public class MultiList : MonoBehaviour {
                 groups[i].SetStartSiblingIndex(groups[i].startSibIndex - offset);
     }
 
-    bool TryAddGroup(bool isAddFormEnd = true){
+    bool TryAddGroup(bool isAddFormEnd = true) {
         if (!IsNewGroupVisible(isAddFormEnd))
             return false;
         if (isAddFormEnd && IsShowDataReachEnd())
@@ -306,7 +313,7 @@ public class MultiList : MonoBehaviour {
             if (isAddFromEnd)
                 return currentGroup.startPos.x + currentGroup.curBioDirMax + padding.x <
                     contentStartPos.x + bound.width;
-            else 
+            else
                 return firstGroup.startPos.x - padding.x > contentStartPos.x;
         }
     }
@@ -347,8 +354,8 @@ public class MultiList : MonoBehaviour {
         }
     }
 
-    void AddNewGroup(bool isAddFromEnd = true){
-        MultiUnitGroup newGroup = new MultiUnitGroup(this, isAddFromEnd ? 
+    void AddNewGroup(bool isAddFromEnd = true) {
+        MultiUnitGroup newGroup = new MultiUnitGroup(this, isAddFromEnd ?
             endIndex + 1 - startIndex : 0, isAddFromEnd);
         Vector3 newDrawPos;
         newDrawPos = GetNewStartPosWhenAddGroup(newGroup, !isAddFromEnd);
@@ -425,7 +432,7 @@ public class MultiList : MonoBehaviour {
         if (full <= 0) return result;
         Rect rect = GetTemplateRectByDataIndex(startIndex - 1);
         float lastRectDisplayLen = isHorizontalFirst ? rect.width : rect.height;
-        lastRectDisplayLen = lastRectDisplayLen - (GetMaxFullyContainLen(full) - 
+        lastRectDisplayLen = lastRectDisplayLen - (GetMaxFullyContainLen(full) -
             (isHorizontalFirst ? bound.width : bound.height));
         while (true) {
             if (result - 1 < 0)
@@ -509,13 +516,21 @@ public class MultiList : MonoBehaviour {
         return templatesObjects[choice];
     }
 
-    public virtual GameObject CreateListItemByDataIndex(int index) {
+    #region object pool
+    void InitPoolAdapter() {
+        poolAdapter = new MultiListObjectPoolAdapter<GameObject>();
+        poolAdapter.SetPool(templatesObjects.Count, objectPoolSize, CreateListItemByChoiceIndex, ResetListItem, RemoveListItem);
+    }
+
+    public virtual GameObject CreateListItemByChoiceIndex(int idx = 0) {
         GameObject result = null;
-        if (index < datas.Count && index >= 0) {
-            result = InstantiateListItemObjectByChoiceIdx((datas[index] as IMultipleChoice).GetChoice());
-            result.gameObject.AddComponent(itemViewType);
-        }
+        result = InstantiateListItemObjectByChoiceIdx(idx);
+        result.gameObject.AddComponent(itemViewType);
         return result;
+    }
+
+    public virtual int GetChoiceIndexByDataIndex(int dataIndex) {
+        return (datas[dataIndex] as IMultipleChoice).GetChoice();
     }
 
     public virtual GameObject InstantiateListItemObjectByChoiceIdx(int idx = 0) {
@@ -523,7 +538,15 @@ public class MultiList : MonoBehaviour {
     }
 
     public virtual void RemoveListItem(GameObject tempObj) {
-        GameObject.Destroy(tempObj);
+        //Do not GameObject.Destroy here, this may leads RepositionAllGroups to wrong direction!
+        tempObj.SetActive(false);
+        tempObj.transform.SetAsLastSibling();
     }
+
+    public virtual void ResetListItem(GameObject tempObj) {
+        tempObj.SetActive(true);
+        tempObj.transform.SetParent(content);
+    }
+    #endregion
     #endregion
 }

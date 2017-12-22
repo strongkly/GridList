@@ -167,8 +167,7 @@ public class MultiUnitGroup {
     public bool TryAddUnit(int dataIndex, bool isAddFromEnd = true) {
         if (!IsNewUnitVisible(isAddFromEnd))
             return false;
-        FillItemView(CreateAndAddUnit(multiList.CreateListItemByDataIndex(dataIndex),
-            isAddFromEnd), dataIndex);
+        FillItemView(CreateAndAddUnit(GetItem(dataIndex),isAddFromEnd), dataIndex);
         return true;
     }
 
@@ -261,7 +260,8 @@ public class MultiUnitGroup {
         if (isRemoveFromHead)
             UpdateStartPosWhenRemoveUnitFromHead(unit);
 
-        DestroyUnit(unit.gameObject);
+        StoreItem(unit.gameObject, (multiList.datas[unit.dataIndex]
+           as IMultipleChoice).GetChoice());
     }
 
     void UpdateStartPosWhenRemoveUnitFromHead(MultiUnit unit) {
@@ -283,10 +283,6 @@ public class MultiUnitGroup {
         obj.SetActive(true);
 
         obj.name = string.Format("groupid:{0}siblingindex:{1}start:{2}end:{3}",groupid, "000", startSibIndex, startSibIndex + units.Count);
-    }
-
-    void DestroyUnit(GameObject obj) {
-        multiList.RemoveListItem(obj);
     }
 
     void FillItemView(MultiUnit unit, int dataIndex) {
@@ -321,5 +317,14 @@ public class MultiUnitGroup {
 
         needReposition = false;
         //Debug.LogError(string.Format("groupid:{0},startSibIndex:{1},endSibIndex:{2}", groupid, startSibIndex, startSibIndex + unitCount - 1));
+    }
+
+    public GameObject GetItem(int dataIndex) {
+        return multiList.poolAdapter.GetObject(
+            multiList.GetChoiceIndexByDataIndex(dataIndex));
+    }
+
+    public bool StoreItem(GameObject obj, int choice) {
+        return multiList.poolAdapter.StoreObject(obj, choice);
     }
 }
