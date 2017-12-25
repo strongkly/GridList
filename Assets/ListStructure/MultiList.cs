@@ -5,8 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// TODO: 创建销毁太过频繁，需要优化
-/// TODO: 列表项目大小不应该完全由RectTransform.Rect 来控制
+/// TODO: item size may not control by rect size
 /// </summary>
 public class MultiList : MonoBehaviour {
     #region coorperating components
