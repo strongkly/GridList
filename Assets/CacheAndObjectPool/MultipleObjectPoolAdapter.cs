@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 
 public class MultipleObjectPoolAdapter<T> where T : class, new() {
-    List<ObjectPool<T>> pools;
+    List<MultiObjectPool<T>> pools;
 
     Func<int, T> crtFunc;
 
@@ -15,11 +15,13 @@ public class MultipleObjectPoolAdapter<T> where T : class, new() {
         return pools[choice].StoreObject(obj);
     }
 
-    public virtual void SetPool(int choicesCount, int size, Func<int, T> crtFunc = null,
-        Action<T> rstFunc = null, Action<T> storeFunc = null) {
+    public virtual void SetPool(int choicesCount, int size, 
+        Func<int, T> crtFunc = null, Action<T> rstFunc = null, 
+        Action<T> storeFunc = null) {
+
         this.crtFunc = crtFunc;
-        pools = new List<ObjectPool<T>>();
+        pools = new List<MultiObjectPool<T>>();
         for (int i = 0; i < choicesCount; i++) 
-            pools.Add(new ObjectPool<T>(size, ()=> { return crtFunc(i);}, rstFunc, storeFunc));
+            pools.Add(new MultiObjectPool<T>(i, size, crtFunc, rstFunc, storeFunc));
     }
 }

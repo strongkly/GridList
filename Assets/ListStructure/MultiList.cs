@@ -109,6 +109,7 @@ public class MultiList : MonoBehaviour {
         private set;
         get;
     }
+    Transform poolRoot;
     #endregion
 
     public void Start() {
@@ -161,7 +162,7 @@ public class MultiList : MonoBehaviour {
         this.datas = datas;
         this.itemViewType = itemViewType;
         this.scrollRect.onValueChanged.AddListener(OnDrag);
-        InitPoolAdapter();
+        InitPool();
         //set the start pos of grid to the start pos of content at beginning,
         //in order to get whole view of initial list
         grid.SetStartPlacePos(contentStartPos);
@@ -517,6 +518,17 @@ public class MultiList : MonoBehaviour {
     }
 
     #region object pool
+
+    void InitPool() {
+        CreatePoolRoot();
+        InitPoolAdapter();
+    }
+    void CreatePoolRoot() {
+        GameObject root = new GameObject();
+        root.name = "PoolRoot";
+        root.transform.SetParent(this.transform, false);
+        poolRoot = root.transform;
+    }
     void InitPoolAdapter() {
         poolAdapter = new MultiListObjectPoolAdapter<GameObject>();
         poolAdapter.SetPool(templatesObjects.Count, objectPoolSize, CreateListItemByChoiceIndex, ResetListItem, RemoveListItem);
@@ -541,11 +553,12 @@ public class MultiList : MonoBehaviour {
         //Do not GameObject.Destroy here, this may leads RepositionAllGroups to wrong direction!
         tempObj.SetActive(false);
         tempObj.transform.SetAsLastSibling();
+        tempObj.transform.SetParent(poolRoot, false);
     }
 
     public virtual void ResetListItem(GameObject tempObj) {
         tempObj.SetActive(true);
-        tempObj.transform.SetParent(content);
+        tempObj.transform.SetParent(content, false);
     }
     #endregion
     #endregion

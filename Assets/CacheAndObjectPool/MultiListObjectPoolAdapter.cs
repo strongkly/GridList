@@ -14,13 +14,16 @@ public class MultiListObjectPoolAdapter<T> : MultipleObjectPoolAdapter<T>
     }
 
     public override bool StoreObject(T obj, int choice) {
-        if (!cacheQueues[choice].TryStoreItem(obj))
+        if (cacheQueues[choice].TryStoreItem(obj))
             return true;
         else
             return base.StoreObject(obj, choice);
     }
 
-    public override void SetPool(int choicesCount, int size, Func<int, T> crtFunc = null, Action<T> rstFunc = null, Action<T> storeFunc = null) {
+    public override void SetPool(int choicesCount, int size, 
+        Func<int, T> crtFunc = null, Action<T> rstFunc = null,
+        Action<T> storeFunc = null) {
+
         base.SetPool(choicesCount, size, crtFunc, rstFunc, storeFunc);
         cacheQueues = new List<CacheQueue<T>>();
         for (int i = 0; i < choicesCount; i++)

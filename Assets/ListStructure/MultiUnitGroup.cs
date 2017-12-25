@@ -70,8 +70,8 @@ public class MultiUnitGroup {
     }
     #endregion
 
-    static int groupIdCur = 0;
-    public int groupid;
+    //static int groupIdCur = 0;
+    //public int groupid;
 
     public float curBioDirMax {
         private set;
@@ -93,8 +93,8 @@ public class MultiUnitGroup {
     public MultiUnitGroup(MultiList multiList, int startSibIndex, bool isAddFromEnd = true) {
         this.multiList = multiList;
         this.startSibIndex = startSibIndex;
-        groupIdCur++;
-        groupid = groupIdCur;
+        //groupIdCur++;
+        //groupid = groupIdCur;
     }
 
     public void SetNewGroupStartPos(Vector3 startPos) {
@@ -160,6 +160,8 @@ public class MultiUnitGroup {
         MultiUnit unit = isDeleteFromHead ? units[0] : units[units.Count - 1];
         if (IsUnitVisible(unit))
             return false;
+        //Debug.LogError(string.Format("dataIndex:{0} is deleted from group {1}, group current len:{2}",
+        //  unit.dataIndex, groupid, units.Count));
         DestroyAndRemoveUnit(unit, isDeleteFromHead);
         return true;
     }
@@ -167,6 +169,8 @@ public class MultiUnitGroup {
     public bool TryAddUnit(int dataIndex, bool isAddFromEnd = true) {
         if (!IsNewUnitVisible(isAddFromEnd))
             return false;
+        //Debug.LogError(string.Format("dataIndex:{0} is added to group {1}, group current len:{2}",
+        //    dataIndex, groupid, units.Count));
         FillItemView(CreateAndAddUnit(GetItem(dataIndex),isAddFromEnd), dataIndex);
         return true;
     }
@@ -282,7 +286,7 @@ public class MultiUnitGroup {
         trans.localScale = Vector3.one;
         obj.SetActive(true);
 
-        obj.name = string.Format("groupid:{0}siblingindex:{1}start:{2}end:{3}",groupid, "000", startSibIndex, startSibIndex + units.Count);
+        //obj.name = string.Format("groupid:{0}siblingindex:{1}start:{2}end:{3}",groupid, "000", startSibIndex, startSibIndex + units.Count);
     }
 
     void FillItemView(MultiUnit unit, int dataIndex) {

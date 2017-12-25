@@ -49,6 +49,8 @@ public class CacheQueue<T> where T : class {
     public bool TryStoreItem(T item) {
         if (!isFull) {
             items.Enqueue(item);
+            if (storeFunction != null)
+                storeFunction(item);
             return true;
         }
         return false;
@@ -61,6 +63,8 @@ public class CacheQueue<T> where T : class {
         }
         else {
             item = items.Dequeue();
+            if (resetFunction != null)
+                resetFunction(item);
             return true;
         }
     }

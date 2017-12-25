@@ -35,9 +35,9 @@ public class ObjectPool<T> where T : class, new() {
     }
     #endregion
 
-    Func<T> createFunction;
-    Action<T> resetFunction;
-    Action<T> storeFunction;
+    protected Func<T> createFunction;
+    protected Action<T> resetFunction;
+    protected Action<T> storeFunction;
 
     public ObjectPool(int size, Func<T> crtFunc = null, Action<T> rstFunc = null, Action<T> storeFunc = null) {
         this.size = size;
